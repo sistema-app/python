@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python | Jonathan López</title>
-    <!-- Librerías Externas via CDN -->
+    <title>Python | Presentación Interactiva de Jonathan López</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -54,7 +53,7 @@
         .hero-title {
             font-family: 'Space Grotesk', sans-serif;
             background: linear-gradient(135deg, #3776ab 0%, #ffd43b 100%);
-            -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -88,17 +87,26 @@
         .dot.active { background: var(--accent); transform: scale(1.6); }
 
         /* Hover Verde Fluorescente */
-        .hover-fluorescente {
-            transition: all 0.3s ease;
-            cursor: crosshair;
-        }
         .hover-fluorescente:hover {
             background-color: #39ff14 !important;
             color: #000000 !important;
             border-color: #39ff14 !important;
-            box-shadow: 0 0 20px #39ff14, inset 0 0 10px rgba(0,0,0,0.5);
+            box-shadow: 0 0 20px #39ff14;
             transform: scale(1.05);
-            z-index: 10;
+        }
+
+        /* Reproductor Flotante */
+        #music-container {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            width: 300px;
+            z-index: 100;
+            transform: translateX(400px);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #music-container.visible {
+            transform: translateX(0);
         }
     </style>
 </head>
@@ -106,12 +114,13 @@
 
     <canvas id="canvas3d"></canvas>
 
-    <!-- Barra de Navegación Estilo Glass -->
-    <nav class="fixed top-0 w-full z-50 px-6 py-4 flex justify-between items-center glass-card m-4 rounded-2xl" style="width: calc(100% - 2rem); box-sizing: border-box;">
-        <div class="cursor-pointer transition-transform hover:scale-105" onclick="goToSlide(0)">
-            <!-- Imagen en lugar del texto -->
-            <img src="img/python.png" alt="Python" class="h-10 w-auto object-contain drop-shadow-[0_0_10px_rgba(55,118,171,0.6)]" onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/c/c3/Python-logo-notext.svg'; this.classList.add('opacity-80');">
+    <nav class="fixed top-0 w-full z-50 px-4 md:px-6 py-4 flex justify-between items-center glass-card mt-4 mx-auto left-0 right-0" style="width: calc(100% - 2rem);">
+        <div class="cursor-pointer flex items-center gap-2" onclick="goToSlide(0)">
+            <span class="text-2xl font-black md:hidden hero-title tracking-tighter">Python</span>
+            <img src="img/python.png" alt="Python Logo" class="hidden md:block h-10 w-auto object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <span class="hidden text-2xl font-black hero-title">Python</span>
         </div>
+        
         <div class="hidden md:flex gap-8 font-medium">
             <span class="nav-link active" data-index="0">Inicio</span>
             <span class="nav-link" data-index="1">Lenguaje</span>
@@ -119,16 +128,28 @@
             <span class="nav-link" data-index="3">Usos</span>
             <span class="nav-link" data-index="4">POO</span>
         </div>
-        <button id="themeToggle" class="p-2 w-10 h-10 flex items-center justify-center rounded-full border border-gray-500/30 hover:scale-110 active:scale-95 transition-all bg-white/5">
-            <span id="themeIcon">☀️</span>
-        </button>
+
+        <div class="flex gap-2">
+            <button id="musicToggle" class="p-2 w-10 h-10 flex items-center justify-center rounded-full border border-blue-500/30 hover:bg-blue-500/20 transition-all bg-white/5">
+                <span>🎵</span>
+            </button>
+            <button id="themeToggle" class="p-2 w-10 h-10 flex items-center justify-center rounded-full border border-gray-500/30 hover:scale-110 transition-all bg-white/5">
+                <span id="themeIcon">☀️</span>
+            </button>
+        </div>
     </nav>
 
-    <!-- Puntos de Progreso -->
+    <div id="music-container" class="glass-card p-2 overflow-hidden">
+        <div class="flex justify-between items-center px-4 py-2 border-b border-white/10 mb-2">
+            <span class="text-xs font-bold uppercase tracking-widest opacity-60">Reproductor</span>
+            <button onclick="toggleMusic()" class="text-lg">×</button>
+        </div>
+        <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/7gk8OzhbMWJXDD9JyBUGjj?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+    </div>
+
     <div class="progress-dots hidden md:flex" id="dots-container"></div>
 
     <main id="slides-container">
-        <!-- Diapositiva 0: Hero -->
         <section class="slide active px-6 text-center">
             <div class="content-wrapper flex-col">
                 <h1 class="hero-title text-7xl md:text-9xl font-extrabold mb-4 slide-anim">Python</h1>
@@ -139,7 +160,6 @@
             </div>
         </section>
 
-        <!-- Diapositiva 1: Concepto de Lenguaje -->
         <section class="slide px-6 py-20">
             <div class="content-wrapper">
                 <div class="glass-card max-w-4xl p-8 md:p-12 w-full slide-anim">
@@ -154,7 +174,6 @@
             </div>
         </section>
 
-        <!-- Diapositiva 2: ¿Qué es Python? -->
         <section class="slide px-6 py-20">
             <div class="content-wrapper">
                 <div class="glass-card max-w-4xl p-8 md:p-12 w-full slide-anim">
@@ -169,22 +188,70 @@
             </div>
         </section>
 
-        <!-- Diapositiva 3: Usos de Python (Nivel omitido) -->
         <section class="slide px-6 py-20">
             <div class="content-wrapper flex-col h-full justify-center">
                 <div class="glass-card max-w-4xl p-8 md:p-12 w-full slide-anim">
                     <h2 class="text-3xl md:text-5xl font-bold mb-6">Usos de Python</h2>
-                    <p class="text-xl mb-8">Python actualmente ocupa el primer lugar en el índice en demanda a nivel mundial. Juega un papel central en:</p>
-                    
+                        <p class="text-xl mb-8">Python actualmente ocupa el primer lugar en el índice en demanda a nivel mundial. Juega un papel central en:</p>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm font-bold mb-10">
-                        <div class="p-5 rounded-xl bg-white/5 border border-white/10 text-center hover-fluorescente flex items-center justify-center">Análisis de datos</div>
-                        <div class="p-5 rounded-xl bg-white/5 border border-white/10 text-center hover-fluorescente flex items-center justify-center">IA</div>
-                        <div class="p-5 rounded-xl bg-white/5 border border-white/10 text-center hover-fluorescente flex items-center justify-center">Machine Learning</div>
-                        <div class="p-5 rounded-xl bg-white/5 border border-white/10 text-center hover-fluorescente flex items-center justify-center">Deep Learning</div>
-                    </div>
 
+                        <div class="p-5 rounded-xl bg-white/5 border border-white/10 text-center hover-fluorescente flex items-center justify-center transition-all duration-300">
+                            <div>
+                                <strong class="bg-gradient-to-r from-red-500 via-yellow-400 via-green-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
+                                    Inteligencia Artificial (IA)
+                                </strong><br>
+                                El campo general que busca que las máquinas “piensen” o actúen de forma inteligente.
+                            </div>
+                        </div>
+
+                        <div class="p-5 rounded-xl bg-white/5 border border-white/10 text-center hover-fluorescente flex items-center justify-center transition-all duration-300">
+                            <div>
+                                <strong class="bg-gradient-to-r from-red-500 via-yellow-400 via-green-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
+                                    Machine Learning (ML)
+                                </strong><br>
+                                Una rama de la IA donde las máquinas aprenden patrones a partir de datos.
+                            </div>
+                        </div>
+
+                        <div class="p-5 rounded-xl bg-white/5 border border-white/10 text-center hover-fluorescente flex items-center justify-center transition-all duration-300">
+                            <div>
+                                <strong class="bg-gradient-to-r from-red-500 via-yellow-400 via-green-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
+                                    Deep Learning (DL)
+                                </strong><br>
+                                Una subrama de ML que usa redes neuronales profundas para aprender representaciones más complejas.
+                            </div>
+                        </div>
+
+                        <div class="p-5 rounded-xl bg-white/5 border border-white/10 text-center hover-fluorescente flex items-center justify-center transition-all duration-300">
+                            <div>
+                                <strong class="bg-gradient-to-r from-red-500 via-yellow-400 via-green-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
+                                    Visión Artificial (Computer Vision)
+                                </strong><br>
+                                Una aplicación de la IA (y muchas veces de ML/DL) enfocada en que las máquinas “vean” e interpreten imágenes o video.
+                            </div>
+                        </div>
+
+                        <div class="p-5 rounded-xl bg-white/5 border border-white/10 text-center hover-fluorescente flex items-center justify-center transition-all duration-300">
+                            <div>
+                                <strong class="bg-gradient-to-r from-red-500 via-yellow-400 via-green-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
+                                    Bases de Datos
+                                </strong><br>
+                                Gran potencia para integrar bases de datos como MySQL.
+                            </div>
+                        </div>
+
+                        <div class="p-5 rounded-xl bg-white/5 border border-white/10 text-center hover-fluorescente flex items-center justify-center transition-all duration-300">
+                            <div>
+                                <strong class="bg-gradient-to-r from-red-500 via-yellow-400 via-green-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
+                                    Análisis de datos y visualización
+                                </strong><br>
+                                Implementación de análisis de información con Pandas, Numpy y Matplotlib.
+                            </div>
+                        </div>
+
+                    </div>
                     <div class="text-center">
-                        <a href="https://www.tiobe.com/tiobe-index/" target="_blank" class="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-500 hover:to-blue-300 text-white rounded-full transition-all shadow-lg font-bold hover:scale-105 active:scale-95">
+                        <a href="https://www.tiobe.com/tiobe-index/" target="_blank" class="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-500 hover:to-blue-300 text-white rounded-full transition-all shadow-lg font-bold hover:scale-105">
                             🌐 Ver índice TIOBE
                         </a>
                     </div>
@@ -192,26 +259,22 @@
             </div>
         </section>
 
-        <!-- Diapositiva 4: POO y Footer -->
         <section class="slide px-6 py-20">
             <div class="content-wrapper flex-col h-full justify-between">
-                
                 <div class="flex-grow flex items-center justify-center w-full">
                     <div class="glass-card max-w-3xl p-12 md:p-16 w-full slide-anim text-center flex flex-col items-center border border-purple-500/30">
-                        <h2 class="text-4xl md:text-6xl font-black mb-10 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 drop-shadow-lg">
+                        <h2 class="text-4xl md:text-6xl font-black mb-10 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
                             Programación Orientada a Objetos
                         </h2>
-                        <a href="https://sistema-app.github.io/poo/" target="_blank" class="group relative inline-flex items-center justify-center px-10 py-6 text-2xl font-extrabold text-white transition-all duration-300 ease-in-out bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 rounded-3xl hover:scale-110 hover:shadow-[0_0_50px_rgba(219,39,119,0.7)] focus:outline-none overflow-hidden ring-4 ring-pink-500/50">
-                            <span class="absolute inset-0 w-full h-full -mt-1 rounded-lg opacity-30 bg-gradient-to-b from-transparent via-transparent to-black"></span>
-                            <span class="relative drop-shadow-md">¡Descubre qué es la POO!</span>
+                        <a href="https://sistema-app.github.io/poo/" target="_blank" class="group relative inline-flex items-center justify-center px-10 py-6 text-2xl font-extrabold text-white bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 rounded-3xl hover:scale-110 hover:shadow-[0_0_50px_rgba(219,39,119,0.7)] transition-all duration-300 ring-4 ring-pink-500/50">
+                            <span class="relative">¡Descubre qué es la POO!</span>
                         </a>
                     </div>
                 </div>
-
-                <footer class="w-full text-center slide-anim pb-4 pt-8">
+                <footer class="w-full text-center slide-anim pb-4">
                     <div class="text-4xl mb-4 animate-bounce">🐍 👾 🛸</div>
                     <p class="text-md opacity-60">App desarrollada por Jonathan López</p>
-                    <p class="text-xs opacity-30 mt-1 uppercase tracking-widest">Con ayuda de serpientes y algunos aliens</p>
+                    <p class="text-xs opacity-30 mt-1 uppercase tracking-widest">Incluye serpientes y algunos aliens</p>
                 </footer>
             </div>
         </section>
@@ -235,12 +298,10 @@
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
                 this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
                 this.camera.position.z = 3;
-
                 this.scene.add(new THREE.AmbientLight(0xffffff, 0.7));
                 this.pointLight = new THREE.PointLight(0x3776ab, 3);
                 this.pointLight.position.set(5, 5, 5);
                 this.scene.add(this.pointLight);
-
                 this.loadResources();
                 this.animate();
                 window.addEventListener('resize', () => this.onResize());
@@ -251,18 +312,14 @@
                 for (let i = 1; i <= 10; i++) {
                     loader.load(`models/${i}.glb`, (gltf) => {
                         for(let j=0; j<8; j++) this.addModelToScene(gltf.scene.clone());
-                    }, undefined, () => {
-                        if(i === 1) this.createFallback();
-                    });
+                    }, undefined, () => { if(i === 1) this.createFallback(); });
                 }
             }
 
             addModelToScene(obj) {
                 obj.position.set((Math.random()-0.5)*12, (Math.random()-0.5)*12, (Math.random()-0.5)*10);
-                obj.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, 0);
                 const s = 0.03 + (Math.random() * 0.02);
                 obj.scale.set(s, s, s);
-                obj.userData = { drift: Math.random() * 0.01 };
                 this.universeGroup.add(obj);
                 this.models.push(obj);
             }
@@ -283,13 +340,10 @@
             }
 
             warp(dir) {
-                const tl = gsap.timeline();
-                tl.to(this.camera, { fov: 120, duration: 0.5, ease: "power2.in", onUpdate: () => this.camera.updateProjectionMatrix() })
-                  .to(this.camera, { fov: 60, duration: 0.7, ease: "power3.out", onUpdate: () => this.camera.updateProjectionMatrix() });
-                
+                gsap.to(this.camera, { fov: 120, duration: 0.5, onUpdate: () => this.camera.updateProjectionMatrix() });
+                gsap.to(this.camera, { fov: 60, duration: 0.7, delay: 0.5, onUpdate: () => this.camera.updateProjectionMatrix() });
                 gsap.to(this.universeGroup.rotation, { 
                     y: this.universeGroup.rotation.y + (Math.PI * dir), 
-                    z: this.universeGroup.rotation.z + (Math.PI/2 * dir),
                     duration: 1.2, ease: "power2.inOut" 
                 });
             }
@@ -297,15 +351,11 @@
             animate() {
                 requestAnimationFrame(() => this.animate());
                 this.universeGroup.rotation.y += 0.001;
-                this.models.forEach(m => {
-                    m.rotation.x += 0.01;
-                    m.position.y += Math.sin(Date.now()*0.002) * 0.001;
-                });
                 this.renderer.render(this.scene, this.camera);
             }
         }
 
-        /** --- LÓGICA DE DIAPOSITIVAS (SLIDESHOW) --- **/
+        /** --- LÓGICA DE DIAPOSITIVAS --- **/
         const world = new Background3D();
         let current = 0;
         const slides = document.querySelectorAll('.slide');
@@ -327,48 +377,43 @@
             const inElements = slides[index].querySelectorAll('.slide-anim');
 
             world.warp(dir);
-
-            gsap.to(outElements, { y: -50 * dir, opacity: 0, duration: 0.4, stagger: 0.05 });
+            gsap.to(outElements, { y: -50 * dir, opacity: 0, duration: 0.4 });
             gsap.to(slides[current], { opacity: 0, duration: 0.5, onComplete: () => {
                 slides[current].classList.remove('active');
                 slides[index].classList.add('active');
-                
                 document.querySelectorAll('.nav-link').forEach((n, i) => n.classList.toggle('active', i === index));
                 document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === index));
-
-                gsap.fromTo(inElements, { y: 50 * dir, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: "power3.out" });
-                gsap.to(slides[index], { opacity: 1, duration: 0.5, onComplete: () => { 
-                    current = index; 
-                    busy = false; 
-                }});
+                gsap.fromTo(inElements, { y: 50 * dir, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8 });
+                gsap.to(slides[index], { opacity: 1, duration: 0.5, onComplete: () => { current = index; busy = false; }});
             }});
         }
 
-        // --- NAVEGACIÓN DESDE EL MENÚ SUPERIOR ---
+        // Navegación Menú
         document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-                const targetIndex = parseInt(e.target.getAttribute('data-index'));
-                goToSlide(targetIndex);
-            });
+            link.addEventListener('click', (e) => goToSlide(parseInt(e.target.getAttribute('data-index'))));
         });
 
-        // Navegación por Rueda/Táctil
-        window.addEventListener('wheel', e => { if(Math.abs(e.deltaY) > 20) goToSlide(current + (e.deltaY > 0 ? 1 : -1)); });
+        // Música
+        const musicContainer = document.getElementById('music-container');
+        function toggleMusic() {
+            musicContainer.classList.toggle('visible');
+        }
+        document.getElementById('musicToggle').onclick = toggleMusic;
+
+        // Wheel/Touch
+        window.addEventListener('wheel', e => { if(Math.abs(e.deltaY) > 50) goToSlide(current + (e.deltaY > 0 ? 1 : -1)); });
         let ts; window.addEventListener('touchstart', e => ts = e.touches[0].clientY);
         window.addEventListener('touchend', e => {
             const te = e.changedTouches[0].clientY;
-            if(Math.abs(ts - te) > 40) goToSlide(current + (ts > te ? 1 : -1));
+            if(Math.abs(ts - te) > 50) goToSlide(current + (ts > te ? 1 : -1));
         });
 
-        // Cambio de Tema
+        // Tema
         document.getElementById('themeToggle').onclick = () => {
             const isDark = document.body.classList.toggle('dark');
             document.body.classList.toggle('light');
             document.getElementById('themeIcon').innerText = isDark ? '☀️' : '🌙';
         };
-
-        // Animación Inicial
-        gsap.from(".slide-anim", { y: 30, opacity: 0, duration: 1, stagger: 0.2 });
     </script>
 </body>
 </html>

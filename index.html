@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python | Jonathan López</title>
+    <!-- Librerías Externas via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;700;800&family=Space+Grotesk:wght@300;500;700&display=swap');
+
+        :root {
+            --bg-dark: #0a0a0c;
+            --bg-light: #f8fafc;
+            --glass-dark: rgba(20, 20, 25, 0.65);
+            --glass-light: rgba(255, 255, 255, 0.65);
+            --accent: #3776ab;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin: 0;
+            overflow: hidden; 
+            transition: background-color 0.5s ease;
+            touch-action: none; 
+        }
+
+        .dark { background-color: var(--bg-dark); color: white; }
+        .light { background-color: var(--bg-light); color: #1e293b; }
+
+        canvas#canvas3d {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            outline: none;
+        }
+
+        .glass-card {
+            backdrop-filter: blur(20px) saturate(200%);
+            -webkit-backdrop-filter: blur(20px) saturate(200%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .dark .glass-card { background: var(--glass-dark); }
+        .light .glass-card { background: var(--glass-light); border: 1px solid rgba(0, 0, 0, 0.05); }
+
+        .hero-title {
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(135deg, #3776ab 0%, #ffd43b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Navegación */
+        .nav-link { position: relative; cursor: pointer; transition: color 0.3s ease; }
+        .nav-link::after {
+            content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 2px;
+            background: var(--accent); transition: width 0.3s ease;
+        }
+        .nav-link:hover::after, .nav-link.active::after { width: 100%; }
+        .nav-link.active { color: var(--accent); font-weight: bold; }
+
+        /* Estructura de Diapositivas */
+        #slides-container { position: relative; width: 100vw; height: 100vh; perspective: 1000px; }
+        .slide {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; visibility: hidden;
+            transform: translateZ(-100px);
+        }
+        .slide.active { opacity: 1; pointer-events: auto; visibility: visible; transform: translateZ(0); }
+        
+        .content-wrapper {
+            max-height: 85vh; overflow-y: auto; padding: 1rem; width: 100%; display: flex; justify-content: center; align-items: center;
+        }
+        .content-wrapper::-webkit-scrollbar { display: none; }
+
+        /* Indicadores laterales */
+        .progress-dots { position: fixed; right: 2rem; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 1rem; z-index: 50; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(128,128,128,0.3); cursor: pointer; transition: all 0.3s ease; }
+        .dot.active { background: var(--accent); transform: scale(1.6); }
+
+        /* Hover Verde Fluorescente */
+        .hover-fluorescente {
+            transition: all 0.3s ease;
+            cursor: crosshair;
+        }
+        .hover-fluorescente:hover {
+            background-color: #39ff14 !important;
+            color: #000000 !important;
+            border-color: #39ff14 !important;
+            box-shadow: 0 0 20px #39ff14, inset 0 0 10px rgba(0,0,0,0.5);
+            transform: scale(1.05);
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="dark">
+
+    <canvas id="canvas3d"></canvas>
+
+    <!-- Barra de Navegación Estilo Glass -->
+    <nav class="fixed top-0 w-full z-50 px-6 py-4 flex justify-between items-center glass-card m-4 rounded-2xl" style="width: calc(100% - 2rem); box-sizing: border-box;">
+        <div class="cursor-pointer transition-transform hover:scale-105" onclick="goToSlide(0)">
+            <!-- Imagen en lugar del texto -->
+            <img src="img/python.png" alt="Python" class="h-10 w-auto object-contain drop-shadow-[0_0_10px_rgba(55,118,171,0.6)]" onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/c/c3/Python-logo-notext.svg'; this.classList.add('opacity-80');">
+        </div>
+        <div class="hidden md:flex gap-8 font-medium">
+            <span class="nav-link active" data-index="0">Inicio</span>
+            <span class="nav-link" data-index="1">Lenguaje</span>
+            <span class="nav-link" data-index="2">Python</span>
+            <span class="nav-link" data-index="3">Usos</span>
+            <span class="nav-link" data-index="4">POO</span>
+        </div>
+        <button id="themeToggle" class="p-2 w-10 h-10 flex items-center justify-center rounded-full border border-gray-500/30 hover:scale-110 active:scale-95 transition-all bg-white/5">
+            <span id="themeIcon">☀️</span>
+        </button>
+    </nav>
+
+    <!-- Puntos de Progreso -->
+    <div class="progress-dots hidden md:flex" id="dots-container"></div>
+
+    <main id="slides-container">
+        <!-- Diapositiva 0: Hero -->
+        <section class="slide active px-6 text-center">
+            <div class="content-wrapper flex-col">
+                <h1 class="hero-title text-7xl md:text-9xl font-extrabold mb-4 slide-anim">Python</h1>
+                <p class="text-xl md:text-2xl font-light tracking-widest slide-anim opacity-80">App web desarrollada por Jonathan López</p>
+                <div class="mt-12 animate-pulse text-sm uppercase tracking-widest opacity-50 border border-current rounded-full px-6 py-2 cursor-pointer transition-colors hover:bg-white/10" onclick="goToSlide(1)">
+                    Desliza o haz clic para explorar ↓
+                </div>
+            </div>
+        </section>
+
+        <!-- Diapositiva 1: Concepto de Lenguaje -->
+        <section class="slide px-6 py-20">
+            <div class="content-wrapper">
+                <div class="glass-card max-w-4xl p-8 md:p-12 w-full slide-anim">
+                    <h2 class="text-3xl md:text-5xl font-bold mb-6 text-blue-400">¿Qué es un lenguaje de programación?</h2>
+                    <p class="text-lg md:text-2xl leading-relaxed mb-6">
+                        Un lenguaje de programación es un conjunto de instrucciones que pueden ser interpretadas por diferentes tipos de hardware para realizar diversos procesos o tareas específicas.
+                    </p>
+                    <p class="text-lg opacity-70 border-t border-white/10 pt-6">
+                        Permite comunicarnos con los dispositivos a través de comandos, métodos y algoritmos escritos en una sintaxis que entienden y que pueden procesar a lenguaje de máquina.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Diapositiva 2: ¿Qué es Python? -->
+        <section class="slide px-6 py-20">
+            <div class="content-wrapper">
+                <div class="glass-card max-w-4xl p-8 md:p-12 w-full slide-anim">
+                    <h2 class="text-3xl md:text-5xl font-bold mb-6 text-yellow-400">¿Qué es Python?</h2>
+                    <p class="text-lg md:text-2xl leading-relaxed mb-8">
+                        Python es un lenguaje de programación interpretado (no requiere de un compilador) cuya filosofía hace hincapié en la legibilidad de su código. Se trata de un lenguaje de programación multiparadigma (orientado a objetos, eventos, procedimientos, etc.) y es multiplataforma.
+                    </p>
+                    <div class="p-6 rounded-2xl bg-blue-500/10 border-l-4 border-blue-500 italic text-lg shadow-xl">
+                        Python contiene una gran cantidad de librerías y métodos ya incorporados en el propio lenguaje, que ayudan a realizar muchas tareas comunes sin necesidad de tener que programarlas desde cero.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Diapositiva 3: Usos de Python (Nivel omitido) -->
+        <section class="slide px-6 py-20">
+            <div class="content-wrapper flex-col h-full justify-center">
+                <div class="glass-card max-w-4xl p-8 md:p-12 w-full slide-anim">
+                    <h2 class="text-3xl md:text-5xl font-bold mb-6">Usos de Python</h2>
+                    <p class="text-xl mb-8">Python actualmente ocupa el primer lugar en el índice en demanda a nivel mundial. Juega un papel central en:</p>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm font-bold mb-10">
+                        <div class="p-5 rounded-xl bg-white/5 border border-white/10 text-center hover-fluorescente flex items-center justify-center">Análisis de datos</div>
+                        <div class="p-5 rounded-xl bg-white/5 border border-white/10 text-center hover-fluorescente flex items-center justify-center">IA</div>
+                        <div class="p-5 rounded-xl bg-white/5 border border-white/10 text-center hover-fluorescente flex items-center justify-center">Machine Learning</div>
+                        <div class="p-5 rounded-xl bg-white/5 border border-white/10 text-center hover-fluorescente flex items-center justify-center">Deep Learning</div>
+                    </div>
+
+                    <div class="text-center">
+                        <a href="https://www.tiobe.com/tiobe-index/" target="_blank" class="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-500 hover:to-blue-300 text-white rounded-full transition-all shadow-lg font-bold hover:scale-105 active:scale-95">
+                            🌐 Ver índice TIOBE
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Diapositiva 4: POO y Footer -->
+        <section class="slide px-6 py-20">
+            <div class="content-wrapper flex-col h-full justify-between">
+                
+                <div class="flex-grow flex items-center justify-center w-full">
+                    <div class="glass-card max-w-3xl p-12 md:p-16 w-full slide-anim text-center flex flex-col items-center border border-purple-500/30">
+                        <h2 class="text-4xl md:text-6xl font-black mb-10 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 drop-shadow-lg">
+                            Programación Orientada a Objetos
+                        </h2>
+                        <a href="https://sistema-app.github.io/poo/" target="_blank" class="group relative inline-flex items-center justify-center px-10 py-6 text-2xl font-extrabold text-white transition-all duration-300 ease-in-out bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 rounded-3xl hover:scale-110 hover:shadow-[0_0_50px_rgba(219,39,119,0.7)] focus:outline-none overflow-hidden ring-4 ring-pink-500/50">
+                            <span class="absolute inset-0 w-full h-full -mt-1 rounded-lg opacity-30 bg-gradient-to-b from-transparent via-transparent to-black"></span>
+                            <span class="relative drop-shadow-md">¡Descubre qué es la POO!</span>
+                        </a>
+                    </div>
+                </div>
+
+                <footer class="w-full text-center slide-anim pb-4 pt-8">
+                    <div class="text-4xl mb-4 animate-bounce">🐍 👾 🛸</div>
+                    <p class="text-md opacity-60">App desarrollada por Jonathan López</p>
+                    <p class="text-xs opacity-30 mt-1 uppercase tracking-widest">Con ayuda de serpientes y algunos aliens</p>
+                </footer>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        /** --- MOTOR 3D (THREE.JS) --- **/
+        class Background3D {
+            constructor() {
+                this.container = document.getElementById('canvas3d');
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.renderer = new THREE.WebGLRenderer({ canvas: this.container, antialias: true, alpha: true });
+                this.universeGroup = new THREE.Group();
+                this.scene.add(this.universeGroup);
+                this.models = [];
+                this.init();
+            }
+
+            init() {
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                this.camera.position.z = 3;
+
+                this.scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+                this.pointLight = new THREE.PointLight(0x3776ab, 3);
+                this.pointLight.position.set(5, 5, 5);
+                this.scene.add(this.pointLight);
+
+                this.loadResources();
+                this.animate();
+                window.addEventListener('resize', () => this.onResize());
+            }
+
+            loadResources() {
+                const loader = new THREE.GLTFLoader();
+                for (let i = 1; i <= 10; i++) {
+                    loader.load(`models/${i}.glb`, (gltf) => {
+                        for(let j=0; j<8; j++) this.addModelToScene(gltf.scene.clone());
+                    }, undefined, () => {
+                        if(i === 1) this.createFallback();
+                    });
+                }
+            }
+
+            addModelToScene(obj) {
+                obj.position.set((Math.random()-0.5)*12, (Math.random()-0.5)*12, (Math.random()-0.5)*10);
+                obj.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, 0);
+                const s = 0.03 + (Math.random() * 0.02);
+                obj.scale.set(s, s, s);
+                obj.userData = { drift: Math.random() * 0.01 };
+                this.universeGroup.add(obj);
+                this.models.push(obj);
+            }
+
+            createFallback() {
+                const geo = new THREE.IcosahedronGeometry(0.1, 0);
+                const mat = new THREE.MeshPhongMaterial({ color: 0x3776ab, wireframe: true });
+                for(let i=0; i<100; i++) {
+                    const m = new THREE.Mesh(geo, mat);
+                    this.addModelToScene(m);
+                }
+            }
+
+            onResize() {
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+
+            warp(dir) {
+                const tl = gsap.timeline();
+                tl.to(this.camera, { fov: 120, duration: 0.5, ease: "power2.in", onUpdate: () => this.camera.updateProjectionMatrix() })
+                  .to(this.camera, { fov: 60, duration: 0.7, ease: "power3.out", onUpdate: () => this.camera.updateProjectionMatrix() });
+                
+                gsap.to(this.universeGroup.rotation, { 
+                    y: this.universeGroup.rotation.y + (Math.PI * dir), 
+                    z: this.universeGroup.rotation.z + (Math.PI/2 * dir),
+                    duration: 1.2, ease: "power2.inOut" 
+                });
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                this.universeGroup.rotation.y += 0.001;
+                this.models.forEach(m => {
+                    m.rotation.x += 0.01;
+                    m.position.y += Math.sin(Date.now()*0.002) * 0.001;
+                });
+                this.renderer.render(this.scene, this.camera);
+            }
+        }
+
+        /** --- LÓGICA DE DIAPOSITIVAS (SLIDESHOW) --- **/
+        const world = new Background3D();
+        let current = 0;
+        const slides = document.querySelectorAll('.slide');
+        const dotsContainer = document.getElementById('dots-container');
+        let busy = false;
+
+        slides.forEach((_, i) => {
+            const dot = document.createElement('div');
+            dot.className = `dot ${i===0?'active':''}`;
+            dot.onclick = () => goToSlide(i);
+            dotsContainer.appendChild(dot);
+        });
+
+        function goToSlide(index) {
+            if (busy || index === current || index < 0 || index >= slides.length) return;
+            busy = true;
+            const dir = index > current ? 1 : -1;
+            const outElements = slides[current].querySelectorAll('.slide-anim');
+            const inElements = slides[index].querySelectorAll('.slide-anim');
+
+            world.warp(dir);
+
+            gsap.to(outElements, { y: -50 * dir, opacity: 0, duration: 0.4, stagger: 0.05 });
+            gsap.to(slides[current], { opacity: 0, duration: 0.5, onComplete: () => {
+                slides[current].classList.remove('active');
+                slides[index].classList.add('active');
+                
+                document.querySelectorAll('.nav-link').forEach((n, i) => n.classList.toggle('active', i === index));
+                document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === index));
+
+                gsap.fromTo(inElements, { y: 50 * dir, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: "power3.out" });
+                gsap.to(slides[index], { opacity: 1, duration: 0.5, onComplete: () => { 
+                    current = index; 
+                    busy = false; 
+                }});
+            }});
+        }
+
+        // --- NAVEGACIÓN DESDE EL MENÚ SUPERIOR ---
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                const targetIndex = parseInt(e.target.getAttribute('data-index'));
+                goToSlide(targetIndex);
+            });
+        });
+
+        // Navegación por Rueda/Táctil
+        window.addEventListener('wheel', e => { if(Math.abs(e.deltaY) > 20) goToSlide(current + (e.deltaY > 0 ? 1 : -1)); });
+        let ts; window.addEventListener('touchstart', e => ts = e.touches[0].clientY);
+        window.addEventListener('touchend', e => {
+            const te = e.changedTouches[0].clientY;
+            if(Math.abs(ts - te) > 40) goToSlide(current + (ts > te ? 1 : -1));
+        });
+
+        // Cambio de Tema
+        document.getElementById('themeToggle').onclick = () => {
+            const isDark = document.body.classList.toggle('dark');
+            document.body.classList.toggle('light');
+            document.getElementById('themeIcon').innerText = isDark ? '☀️' : '🌙';
+        };
+
+        // Animación Inicial
+        gsap.from(".slide-anim", { y: 30, opacity: 0, duration: 1, stagger: 0.2 });
+    </script>
+</body>
+</html>
